@@ -200,14 +200,14 @@ def find_ontology_files(start):
             yield newfn
 
 
-@click.group()
+@click.group(help="Manage ontology definition mappings")
 @click.option('-v', is_flag=True)
 def i(v):
     if v:
         logging.basicConfig(level=logging.INFO)
 
 
-@i.command()
+@i.command(help="Initializes .ontoenv in the current directory")
 @click.option('-v', help="Verbose output", is_flag=True)
 def init(v):
     if v:
@@ -215,7 +215,7 @@ def init(v):
     OntoEnv(initialize=True)
 
 
-@i.command()
+@i.command(help="Rebuilds the .ontoenv cache and mapping in the current directory")
 @click.option('-v', help="Verbose output", is_flag=True)
 def refresh(v):
     if v:
@@ -224,7 +224,7 @@ def refresh(v):
     oe.refresh()
 
 
-@i.command()
+@i.command(help="Print mapping of ontology URI => filename")
 @click.option('-v', help="Verbose output", is_flag=True)
 def dump(v):
     if v:
