@@ -8,8 +8,13 @@ import shutil
 import logging
 import rdflib
 import click
+import networkx as nx
+from networkx.readwrite.graphml import write_graphml, read_graphml
+import matplotlib.pyplot as plt
 
 FILE_EXTENSIONS = [".ttl", ".rdf", ".owl", ".n3", ".ntriples"]
+
+# TODO: track dependencies in a graph and render it
 
 
 class OntoEnv:
@@ -53,6 +58,10 @@ class OntoEnv:
                 raise Exception(f"No .ontoenv directory at {self.oedir}. Be sure to run 'ontoenv init'")
         self.mapping = json.load(open(mapping_file))
 
+        self._dependencies = nx.DiGraph()
+        if os.path.exists(self.oedir / "dependencies.gml"):
+            self._dependencies = read_graphml(self.oedir / "dependencies.gml")
+
         self.cache_contents = set()
         self._refresh_cache_contents()
 
@@ -79,9 +88,11 @@ class OntoEnv:
         shutil.copy(filename, self.cachedir)
         self._refresh_cache_contents()
 
-    def _save_mapping(self):
+    def _save(self):
         with open(self.oedir / "mapping.json", "w") as f:
             json.dump(self.mapping, f)
+        write_graphml(self._dependencies, self.oedir / "dependencies.gml")
+
 
     def _resolve_uri(self, uri: str):
         uri = str(uri)
@@ -121,7 +132,7 @@ class OntoEnv:
         }"""
         for row in graph.query(q):
             self.mapping[str(row[0])] = str(filename)
-        self._save_mapping()
+        self._save()
 
     def _resolve_imports_from_uri(self, uri: str):
         logging.info(f"Resolving imports from {uri}")
@@ -135,7 +146,11 @@ class OntoEnv:
             return
         self._get_ontology_definition(filename)
         for importURI in graph.objects(predicate=rdflib.OWL.imports):
+            self._dependencies.add_edge(str(uri), str(importURI))
             self._resolve_imports_from_uri(str(importURI))
+
+    def print_dependency_graph(self, filename="dependencies.pdf"):
+        self._dependencies.draw(filename, engine="twopi")
 
     def import_dependencies(self, graph, cache=None, recursive=True):
         if cache is None:
@@ -232,3 +247,12 @@ def dump(v):
     oe = OntoEnv(initialize=False)
     for ontology, filename in oe.mapping.items():
         print(f"{ontology} => {filename}")
+
+
+@i.command(help="Output dependency graph")
+@click.argument("output_filename", default="dependencies.pdf")
+def output(output_filename):
+    oe = OntoEnv(initialize=False)
+    pos = nx.spring_layout(oe._dependencies, 2)
+    nx.draw_networkx(oe._dependencies, pos=pos, with_labels=True)
+    plt.savefig(output_filename)
