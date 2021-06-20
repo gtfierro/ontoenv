@@ -124,7 +124,11 @@ class OntoEnv:
         graph = rdflib.Graph()
         filename = str(filename)
         logging.info(f"Parsing {filename}")
-        graph.parse(filename, format=rdflib.util.guess_format(filename))
+        try:
+            graph.parse(filename, format=rdflib.util.guess_format(filename))
+        except Exception as e:
+            logging.error(f"Could not parse {filename}: {e}")
+            return
         # find ontology definitions and update mapping
         q = """SELECT ?ont ?prop ?value WHERE {
             ?ont a <http://www.w3.org/2002/07/owl#Ontology> .
