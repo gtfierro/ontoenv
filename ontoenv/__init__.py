@@ -145,18 +145,22 @@ class OntoEnv:
         self._seen.add(str(uri))
         try:
             graph, filename = self._resolve_uri(uri)
+            self._get_ontology_definition(filename)
+            for importURI in graph.objects(predicate=rdflib.OWL.imports):
+                self._dependencies.add_edge(str(uri), str(importURI))
+                self._resolve_imports_from_uri(str(importURI))
         except Exception as e:
             logging.error(f"Could not resolve {uri} ({e})")
             return
-        self._get_ontology_definition(filename)
-        for importURI in graph.objects(predicate=rdflib.OWL.imports):
-            self._dependencies.add_edge(str(uri), str(importURI))
-            self._resolve_imports_from_uri(str(importURI))
 
     def print_dependency_graph(self, filename="dependencies.pdf"):
         self._dependencies.draw(filename, engine="twopi")
 
-    def import_dependencies(self, graph, cache=None, recursive=True):
+    def import_dependencies(self, graph, cache=None, recursive=True, recursive_limit=-1):
+        if recursive_limit > 0:
+            recursive=False
+        elif recursive_limit==0:
+            return
         if cache is None:
             cache = set()
         new_imports = False
@@ -173,8 +177,8 @@ class OntoEnv:
             logging.info(f"Importing {uri} from {filename}")
             graph.parse(filename, format=rdflib.util.guess_format(filename))
             cache.add(uri)
-        if recursive and new_imports:
-            self.import_dependencies(graph, cache=cache, recursive=recursive)
+        if (recursive or recursive_limit > 0) and new_imports:
+            self.import_dependencies(graph, cache=cache, recursive=recursive, recursive_limit=recursive_limit-1)
 
 
 def find_root_file(start=None):
