@@ -153,8 +153,31 @@ class OntoEnv:
             logging.error(f"Could not resolve {uri} ({e})")
             return
 
-    def print_dependency_graph(self, filename="dependencies.pdf"):
-        self._dependencies.draw(filename, engine="twopi")
+    def print_dependency_graph(self, root_uri=None):
+        print("\033[1mBolded\033[0m values are duplicate imports whose deps are listed elsewhere in the tree")
+        if root_uri is None or root_uri == "":
+            root_uris = [n for n,d in self._dependencies.in_degree() if d==0]
+        elif root_uri not in self._dependencies:
+            root_uris = [self.mapping[root_uri]]
+        else:
+            root_uris = [root_uri]
+        seen = set()
+        for root in root_uris:
+            print(f"{root}")
+            for (_, dep) in self._dependencies.edges([root]):
+                self._print_dep_graph(dep, 1, seen)
+
+    def _print_dep_graph(self, uri, indent, seen, last=False):
+        char = '┕' if last else '┝'
+        if uri in seen:
+            print(f"{'|  '*indent}{char} \033[1m{uri}\033[0m")
+            return
+        print(f"{'|  '*indent}{char} {uri}")
+        seen.add(uri)
+        num_deps = len(self._dependencies.edges([uri]))
+        for (i, (_, dep)) in enumerate(self._dependencies.edges([uri])):
+            self._print_dep_graph(dep, indent+1, seen, last=i==num_deps-1)
+
 
     def import_dependencies(self, graph, cache=None, recursive=True, recursive_limit=-1):
         if recursive_limit > 0:
@@ -247,7 +270,7 @@ def refresh(v):
     oe.refresh()
 
 
-@i.command(help="Print mapping of ontology URI => filename")
+@i.command(help="Print mapping of ontology URI => filename!")
 @click.option('-v', help="Verbose output", is_flag=True)
 def dump(v):
     if v:
@@ -264,3 +287,9 @@ def output(output_filename):
     pos = nx.spring_layout(oe._dependencies, 2)
     nx.draw_networkx(oe._dependencies, pos=pos, with_labels=True)
     plt.savefig(output_filename)
+
+@i.command(help="Print dependency graph")
+@click.argument("root_uri", default="")
+def deps(root_uri):
+    oe = OntoEnv(initialize=False)
+    oe.print_dependency_graph(root_uri)

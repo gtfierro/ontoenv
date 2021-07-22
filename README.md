@@ -32,6 +32,69 @@ env.import_dependencies(g)
 Other commands:
 - `dump`: print the locations of all URIs known by `ontoenv`
 
+The `deps` command will print a tree of imports for a particular file or URI:
+
+```
+% ontoenv deps /home/gabe/src/223p/223standard/data/sample.ttl
+Bolded values are duplicate imports whose deps are listed elsewhere in the tree
+/home/gabe/src/223p/223standard/data/sample.ttl
+|  ┝ http://data.ashrae.org/standard223/1.0/model/all
+|  |  ┝ http://data.ashrae.org/standard223/1.0/vocab/role
+|  |  |  ┝ http://www.w3.org/ns/shacl#
+|  |  |  ┕ http://data.ashrae.org/standard223/1.0/model/core
+|  |  |  |  ┝ http://www.w3.org/ns/shacl#
+|  |  |  |  ┝ http://www.w3.org/ns/sosa/
+|  |  |  |  ┝ http://qudt.org/2.1/vocab/unit
+|  |  |  |  |  ┝ http://qudt.org/2.1/vocab/prefix
+|  |  |  |  |  |  ┕ http://qudt.org/2.1/schema/qudt
+|  |  |  |  |  |  |  ┝ http://www.w3.org/2004/02/skos/core
+|  |  |  |  |  |  |  ┝ http://qudt.org/2.1/schema/extensions/imports
+|  |  |  |  |  |  |  |  ┕ http://qudt.org/2.1/schema/extensions/functions
+|  |  |  |  |  |  |  |  |  ┕ http://spinrdf.org/spl
+|  |  |  |  |  |  |  |  |  |  ┕ http://spinrdf.org/spin
+|  |  |  |  |  |  |  |  |  |  |  ┕ http://spinrdf.org/sp
+|  |  |  |  |  |  |  ┝ http://www.linkedmodel.org/schema/vaem
+|  |  |  |  |  |  |  ┕ http://www.linkedmodel.org/schema/dtype
+|  |  |  |  |  |  |  |  ┕ http://www.linkedmodel.org/schema/vaem
+|  |  |  |  |  ┝ http://qudt.org/2.1/schema/qudt
+|  |  |  |  |  ┝ http://qudt.org/2.1/vocab/quantitykind
+|  |  |  |  |  |  ┝ http://qudt.org/2.1/vocab/dimensionvector
+|  |  |  |  |  |  |  ┕ http://qudt.org/2.1/schema/qudt
+|  |  |  |  |  |  ┕ http://qudt.org/2.1/schema/qudt
+|  |  |  |  |  ┕ http://qudt.org/2.1/vocab/sou
+|  |  |  |  |  |  ┕ http://qudt.org/2.1/schema/qudt
+|  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/extensions/settings
+|  |  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/validation/schema
+|  |  |  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/model/all
+|  |  |  |  |  |  ┕ http://www.w3.org/ns/shacl#
+|  |  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/validation/data
+|  |  |  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/model/all
+|  |  |  |  |  |  ┕ http://www.w3.org/ns/shacl#
+|  |  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/validation/model
+|  |  |  |  |  |  ┝ http://www.w3.org/ns/shacl#
+|  |  |  |  |  |  ┕ http://data.ashrae.org/standard223/1.0/model/all
+|  |  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/inference/model-rules
+|  |  |  |  |  |  ┝ http://www.w3.org/ns/shacl#
+|  |  |  |  |  |  ┕ http://data.ashrae.org/standard223/1.0/model/all
+|  |  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/inference/owl-subset
+|  |  |  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/model/all
+|  |  |  |  |  |  ┕ http://www.w3.org/ns/shacl#
+|  |  |  |  |  ┕ http://data.ashrae.org/standard223/1.0/inference/data-rules
+|  |  |  |  |  |  ┝ http://data.ashrae.org/standard223/1.0/model/all
+|  |  |  |  |  |  ┕ http://www.w3.org/ns/shacl#
+|  |  |  |  ┕ https://brickschema.org/schema/1.2/Brick
+|  |  ┝ http://data.ashrae.org/standard223/1.0/model/device
+|  |  |  ┝ http://data.ashrae.org/standard223/1.0/model/core
+|  |  |  ┕ http://www.w3.org/ns/shacl#
+|  |  ┝ http://data.ashrae.org/standard223/1.0/vocab/domain
+|  |  |  ┝ http://data.ashrae.org/standard223/1.0/model/core
+|  |  |  ┕ http://www.w3.org/ns/shacl#
+|  |  ┝ http://data.ashrae.org/standard223/1.0/model/system
+|  |  |  ┝ http://www.w3.org/ns/shacl#
+|  |  |  ┕ http://data.ashrae.org/standard223/1.0/model/core
+|  |  ┕ http://data.ashrae.org/standard223/1.0/model/core
+```
+
 ## Installation
 
 ```
