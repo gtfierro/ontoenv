@@ -98,13 +98,13 @@ class OntoEnv:
         uri = str(uri)
         graph = rdflib.Graph()
         try:
-            graph.parse(uri, format=rdflib.util.guess_format(uri))
+            graph.parse(uri, format=rdflib.util.guess_format(uri) or "xml")
             filename = uri
         except Exception as e:
             logging.warning(f"Could not load {uri} ({e}); trying to resolve locally")
             if uri in self.mapping:
                 filename = self.mapping[uri]
-                graph.parse(filename, format=rdflib.util.guess_format(filename))
+                graph.parse(filename, format=rdflib.util.guess_format(filename) or "xml")
             else:
                 raise Exception(f"No definition for {uri}")
                 # import sys;sys.exit(1)
