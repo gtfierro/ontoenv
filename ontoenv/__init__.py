@@ -7,10 +7,10 @@ import glob
 import shutil
 import logging
 import rdflib
-import click
 import networkx as nx
 from networkx.readwrite.graphml import write_graphml, read_graphml
 import matplotlib.pyplot as plt
+from typing import Optional, Set
 
 FILE_EXTENSIONS = [".ttl", ".rdf", ".owl", ".n3", ".ntriples"]
 
@@ -18,7 +18,9 @@ FILE_EXTENSIONS = [".ttl", ".rdf", ".owl", ".n3", ".ntriples"]
 
 
 class OntoEnv:
-    def __init__(self, oe_dir: Path = None, initialize=False):
+    _dependencies: nx.DiGraph
+
+    def __init__(self, oe_dir: Optional[Path] = None, initialize=False):
         """
         *Idempotently* initializes the oe_dir. Creates directories if they don't exist
         and creates a default mapping file. Reads existing mapping file if one exists.
@@ -29,7 +31,7 @@ class OntoEnv:
             "<ontology URI>": ["list of file paths defining the ontology"],
         }
         """
-        self._seen = set()
+        self._seen: Set[str] = set()
         if oe_dir is None:
             oe_dir = find_root_file()
             if oe_dir is None:
@@ -55,14 +57,17 @@ class OntoEnv:
                 with open(mapping_file, "w") as f:
                     json.dump({}, f)
             else:
-                raise Exception(f"No .ontoenv directory at {self.oedir}. Be sure to run 'ontoenv init'")
+                raise Exception(
+                    f"No .ontoenv directory at {self.oedir}. Be sure to run 'ontoenv init'"
+                )
         self.mapping = json.load(open(mapping_file))
 
         self._dependencies = nx.DiGraph()
         if os.path.exists(self.oedir / "dependencies.gml"):
             self._dependencies = read_graphml(self.oedir / "dependencies.gml")
+            assert isinstance(self._dependencies, nx.DiGraph)
 
-        self.cache_contents = set()
+        self.cache_contents: Set[str] = set()
         self._refresh_cache_contents()
 
         if created:
@@ -74,6 +79,13 @@ class OntoEnv:
             self._get_ontology_definition(filename)
         for filename in find_ontology_files(self.oedir.parent):
             self._resolve_imports_from_uri(filename)
+
+        # remove old imports/files that are no longer in the mapping
+        for uri, filename in self.mapping.items():
+            if not os.path.exists(filename):
+                del self.mapping[uri]
+                self._dependencies.remove_node(uri)
+                logging.info(f"Removed {uri} from mapping")
 
     def _refresh_cache_contents(self):
         self.cache_contents = set()
@@ -93,7 +105,6 @@ class OntoEnv:
             json.dump(self.mapping, f)
         write_graphml(self._dependencies, self.oedir / "dependencies.gml")
 
-
     def _resolve_uri(self, uri: str):
         uri = str(uri)
         graph = rdflib.Graph()
@@ -104,7 +115,9 @@ class OntoEnv:
             logging.warning(f"Could not load {uri} ({e}); trying to resolve locally")
             if uri in self.mapping:
                 filename = self.mapping[uri]
-                graph.parse(filename, format=rdflib.util.guess_format(filename) or "xml")
+                graph.parse(
+                    filename, format=rdflib.util.guess_format(filename) or "xml"
+                )
             else:
                 raise Exception(f"No definition for {uri}")
                 # import sys;sys.exit(1)
@@ -135,6 +148,7 @@ class OntoEnv:
             ?ont ?prop ?value
         }"""
         for row in graph.query(q):
+            assert isinstance(row, tuple)
             self.mapping[str(row[0])] = str(filename)
         self._save()
 
@@ -154,9 +168,11 @@ class OntoEnv:
             return
 
     def print_dependency_graph(self, root_uri=None):
-        print("\033[1mBolded\033[0m values are duplicate imports whose deps are listed elsewhere in the tree")
+        print(
+            "\033[1mBolded\033[0m values are duplicate imports whose deps are listed elsewhere in the tree"
+        )
         if root_uri is None or root_uri == "":
-            root_uris = [n for n,d in self._dependencies.in_degree() if d==0]
+            root_uris = [n for n, d in self._dependencies.in_degree() if d == 0]
         elif root_uri not in self._dependencies:
             root_uris = [self.mapping[root_uri]]
         else:
@@ -168,7 +184,7 @@ class OntoEnv:
                 self._print_dep_graph(dep, 1, seen)
 
     def _print_dep_graph(self, uri, indent, seen, last=False):
-        char = '┕' if last else '┝'
+        char = "┕" if last else "┝"
         if uri in seen:
             print(f"{'|  '*indent}{char} \033[1m{uri}\033[0m")
             return
@@ -176,13 +192,14 @@ class OntoEnv:
         seen.add(uri)
         num_deps = len(self._dependencies.edges([uri]))
         for (i, (_, dep)) in enumerate(self._dependencies.edges([uri])):
-            self._print_dep_graph(dep, indent+1, seen, last=i==num_deps-1)
+            self._print_dep_graph(dep, indent + 1, seen, last=i == num_deps - 1)
 
-
-    def import_dependencies(self, graph, cache=None, recursive=True, recursive_limit=-1):
+    def import_dependencies(
+        self, graph, cache=None, recursive=True, recursive_limit=-1
+    ):
         if recursive_limit > 0:
-            recursive=False
-        elif recursive_limit==0:
+            recursive = False
+        elif recursive_limit == 0:
             return
         if cache is None:
             cache = set()
@@ -201,10 +218,15 @@ class OntoEnv:
             graph.parse(filename, format=rdflib.util.guess_format(filename))
             cache.add(uri)
         if (recursive or recursive_limit > 0) and new_imports:
-            self.import_dependencies(graph, cache=cache, recursive=recursive, recursive_limit=recursive_limit-1)
+            self.import_dependencies(
+                graph,
+                cache=cache,
+                recursive=recursive,
+                recursive_limit=recursive_limit - 1,
+            )
 
 
-def find_root_file(start=None):
+def find_root_file(start=None) -> Optional[Path]:
     """
     Starting at the current directory, traverse upwards until it finds a .ontoenv directory
     """
@@ -246,50 +268,49 @@ def find_ontology_files(start):
             yield newfn
 
 
-@click.group(help="Manage ontology definition mappings")
-@click.option('-v', is_flag=True)
-def i(v):
-    if v:
-        logging.basicConfig(level=logging.INFO)
+if __name__ == "__main__":
+    import click
 
+    @click.group(help="Manage ontology definition mappings")
+    @click.option("-v", is_flag=True)
+    def i(v):
+        if v:
+            logging.basicConfig(level=logging.INFO)
 
-@i.command(help="Initializes .ontoenv in the current directory")
-@click.option('-v', help="Verbose output", is_flag=True)
-def init(v):
-    if v:
-        logging.basicConfig(level=logging.INFO)
-    OntoEnv(initialize=True)
+    @i.command(help="Initializes .ontoenv in the current directory")
+    @click.option("-v", help="Verbose output", is_flag=True)
+    def init(v):
+        if v:
+            logging.basicConfig(level=logging.INFO)
+        OntoEnv(initialize=True)
 
+    @i.command(help="Rebuilds the .ontoenv cache and mapping in the current directory")
+    @click.option("-v", help="Verbose output", is_flag=True)
+    def refresh(v):
+        if v:
+            logging.basicConfig(level=logging.INFO)
+        oe = OntoEnv(initialize=False)
+        oe.refresh()
 
-@i.command(help="Rebuilds the .ontoenv cache and mapping in the current directory")
-@click.option('-v', help="Verbose output", is_flag=True)
-def refresh(v):
-    if v:
-        logging.basicConfig(level=logging.INFO)
-    oe = OntoEnv(initialize=False)
-    oe.refresh()
+    @i.command(help="Print mapping of ontology URI => filename!")
+    @click.option("-v", help="Verbose output", is_flag=True)
+    def dump(v):
+        if v:
+            logging.basicConfig(level=logging.INFO)
+        oe = OntoEnv(initialize=False)
+        for ontology, filename in oe.mapping.items():
+            print(f"{ontology} => {filename}")
 
+    @i.command(help="Output dependency graph")
+    @click.argument("output_filename", default="dependencies.pdf")
+    def output(output_filename):
+        oe = OntoEnv(initialize=False)
+        pos = nx.spring_layout(oe._dependencies, 2)
+        nx.draw_networkx(oe._dependencies, pos=pos, with_labels=True)
+        plt.savefig(output_filename)
 
-@i.command(help="Print mapping of ontology URI => filename!")
-@click.option('-v', help="Verbose output", is_flag=True)
-def dump(v):
-    if v:
-        logging.basicConfig(level=logging.INFO)
-    oe = OntoEnv(initialize=False)
-    for ontology, filename in oe.mapping.items():
-        print(f"{ontology} => {filename}")
-
-
-@i.command(help="Output dependency graph")
-@click.argument("output_filename", default="dependencies.pdf")
-def output(output_filename):
-    oe = OntoEnv(initialize=False)
-    pos = nx.spring_layout(oe._dependencies, 2)
-    nx.draw_networkx(oe._dependencies, pos=pos, with_labels=True)
-    plt.savefig(output_filename)
-
-@i.command(help="Print dependency graph")
-@click.argument("root_uri", default="")
-def deps(root_uri):
-    oe = OntoEnv(initialize=False)
-    oe.print_dependency_graph(root_uri)
+    @i.command(help="Print dependency graph")
+    @click.argument("root_uri", default="")
+    def deps(root_uri):
+        oe = OntoEnv(initialize=False)
+        oe.print_dependency_graph(root_uri)
