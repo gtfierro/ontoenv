@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ontoenv"
-version = "0.3.0"
+version = "0.3.1a3"
 description = "Manages owl:imports statements for multi-file development"
 authors = ["Gabe Fierro <gtfierro@cs.berkeley.edu>"]
 license = "BSD 3-Clause"
@@ -21,4 +21,4 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-ontoenv = "ontoenv:i"
+ontoenv = "ontoenv.cli:i"

@@ -9,7 +9,6 @@ import logging
 import rdflib
 import networkx as nx
 from networkx.readwrite.graphml import write_graphml, read_graphml
-import matplotlib.pyplot as plt
 from typing import Optional, Set
 
 FILE_EXTENSIONS = [".ttl", ".rdf", ".owl", ".n3", ".ntriples"]
@@ -266,51 +265,3 @@ def find_ontology_files(start):
             continue
         for newfn in find_ontology_files(filename):
             yield newfn
-
-
-if __name__ == "__main__":
-    import click
-
-    @click.group(help="Manage ontology definition mappings")
-    @click.option("-v", is_flag=True)
-    def i(v):
-        if v:
-            logging.basicConfig(level=logging.INFO)
-
-    @i.command(help="Initializes .ontoenv in the current directory")
-    @click.option("-v", help="Verbose output", is_flag=True)
-    def init(v):
-        if v:
-            logging.basicConfig(level=logging.INFO)
-        OntoEnv(initialize=True)
-
-    @i.command(help="Rebuilds the .ontoenv cache and mapping in the current directory")
-    @click.option("-v", help="Verbose output", is_flag=True)
-    def refresh(v):
-        if v:
-            logging.basicConfig(level=logging.INFO)
-        oe = OntoEnv(initialize=False)
-        oe.refresh()
-
-    @i.command(help="Print mapping of ontology URI => filename!")
-    @click.option("-v", help="Verbose output", is_flag=True)
-    def dump(v):
-        if v:
-            logging.basicConfig(level=logging.INFO)
-        oe = OntoEnv(initialize=False)
-        for ontology, filename in oe.mapping.items():
-            print(f"{ontology} => {filename}")
-
-    @i.command(help="Output dependency graph")
-    @click.argument("output_filename", default="dependencies.pdf")
-    def output(output_filename):
-        oe = OntoEnv(initialize=False)
-        pos = nx.spring_layout(oe._dependencies, 2)
-        nx.draw_networkx(oe._dependencies, pos=pos, with_labels=True)
-        plt.savefig(output_filename)
-
-    @i.command(help="Print dependency graph")
-    @click.argument("root_uri", default="")
-    def deps(root_uri):
-        oe = OntoEnv(initialize=False)
-        oe.print_dependency_graph(root_uri)
