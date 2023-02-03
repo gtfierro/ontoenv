@@ -241,7 +241,7 @@ def find_root_file(start=None) -> Optional[Path]:
             raise Exception(f".ontoenv ({oe_dir}) must be a directory")
         return oe_dir
 
-    if str(start) == start.root:
+    if len(start.parts) == 1:
         return None
 
     return find_root_file(start.parent)
