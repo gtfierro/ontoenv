@@ -49,3 +49,6 @@ def deps(root_uri):
     oe = OntoEnv(initialize=False)
     oe.print_dependency_graph(root_uri)
 
+
+if __name__ == '__main__':
+    i()
