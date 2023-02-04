@@ -19,7 +19,7 @@ FILE_EXTENSIONS = [".ttl", ".rdf", ".owl", ".n3", ".ntriples"]
 class OntoEnv:
     _dependencies: nx.DiGraph
 
-    def __init__(self, oe_dir: Optional[Path] = None, initialize=False):
+    def __init__(self, oe_dir: Optional[Path] = None, initialize=False, strict=False):
         """
         *Idempotently* initializes the oe_dir. Creates directories if they don't exist
         and creates a default mapping file. Reads existing mapping file if one exists.
@@ -29,7 +29,15 @@ class OntoEnv:
         {
             "<ontology URI>": ["list of file paths defining the ontology"],
         }
+
+        :param oe_dir: directory of the ontoenv mapping file, defaults to None
+        :type oe_dir: Optional[Path], optional
+        :param initialize: if true, then initialize the ontoenv mapping, defaults to False
+        :type initialize: bool, optional
+        :param strict: if true, error when an ontology is not found, defaults to False
+        :type strict: bool, optional
         """
+        self._strict = strict
         self._seen: Set[str] = set()
         if oe_dir is None:
             oe_dir = find_root_file()
@@ -118,8 +126,8 @@ class OntoEnv:
                     filename, format=rdflib.util.guess_format(filename) or "xml"
                 )
             else:
-                raise Exception(f"No definition for {uri}")
-                # import sys;sys.exit(1)
+                logging.fatal(f"No definition for {uri}")
+                import sys;sys.exit(1)
         # if the filename does not exist locally, then serialize the graph into the cache
         # and upate the mapping
         if not os.path.exists(filename):
@@ -139,8 +147,12 @@ class OntoEnv:
         try:
             graph.parse(filename, format=rdflib.util.guess_format(filename))
         except Exception as e:
-            logging.error(f"Could not parse {filename}: {e}")
-            return
+            if self._strict:
+                logging.fatal(f"Could not parse {filename}: {e}")
+                import sys;sys.exit(1)
+            else:
+                logging.error(f"Could not parse {filename}: {e}")
+                return
         # find ontology definitions and update mapping
         q = """SELECT ?ont ?prop ?value WHERE {
             ?ont a <http://www.w3.org/2002/07/owl#Ontology> .
@@ -163,8 +175,12 @@ class OntoEnv:
                 self._dependencies.add_edge(str(uri), str(importURI))
                 self._resolve_imports_from_uri(str(importURI))
         except Exception as e:
-            logging.error(f"Could not resolve {uri} ({e})")
-            return
+            if self._strict:
+                logging.fatal(f"Could not resolve {uri} ({e})")
+                import sys;sys.exit(1)
+            else:
+                logging.error(f"Could not resolve {uri} ({e})")
+                return
 
     def print_dependency_graph(self, root_uri=None):
         print(

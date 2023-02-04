@@ -13,25 +13,28 @@ def i(v):
 
 @i.command(help="Initializes .ontoenv in the current directory")
 @click.option("-v", help="Verbose output", is_flag=True)
-def init(v):
+@click.option("-s", help="Strict mode (error on missing ontologies)", is_flag=True)
+def init(v, s):
     if v:
         logging.basicConfig(level=logging.INFO)
-    OntoEnv(initialize=True)
+    OntoEnv(initialize=True, strict=s)
 
 @i.command(help="Rebuilds the .ontoenv cache and mapping in the current directory")
 @click.option("-v", help="Verbose output", is_flag=True)
-def refresh(v):
+@click.option("-s", help="Strict mode (error on missing ontologies)", is_flag=True)
+def refresh(v, s):
     if v:
         logging.basicConfig(level=logging.INFO)
-    oe = OntoEnv(initialize=False)
+    oe = OntoEnv(initialize=False, strict=s)
     oe.refresh()
 
 @i.command(help="Print mapping of ontology URI => filename!")
 @click.option("-v", help="Verbose output", is_flag=True)
-def dump(v):
+@click.option("-s", help="Strict mode (error on missing ontologies)", is_flag=True)
+def dump(v, s):
     if v:
         logging.basicConfig(level=logging.INFO)
-    oe = OntoEnv(initialize=False)
+    oe = OntoEnv(initialize=False, strict=s)
     for ontology, filename in oe.mapping.items():
         print(f"{ontology} => {filename}")
 
