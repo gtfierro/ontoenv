@@ -106,25 +106,40 @@ class OntoEnv:
 
     def _resolve_uri(self, uri: str):
         uri = str(uri)
-        graph = rdflib.Graph()
         try:
-            graph.parse(uri, format=rdflib.util.guess_format(uri) or "xml")
+            if not rdflib.util.guess_format(uri):
+                # this should be rdflib.Graph.parse guess strategy
+                try:
+                    graph = rdflib.Graph()
+                    graph.parse(uri, format='ttl')
+                except: #rdflib.exceptions.ParserError or SyntaxError?:
+                    graph = rdflib.Graph()
+                    graph.parse(uri, format='xml')
+                # ...could go through the formats
+            else:
+                graph = rdflib.Graph()
+                graph.parse(uri)
             filename = uri
         except Exception as e:
             logging.warning(f"Could not load {uri} ({e}); trying to resolve locally")
             if uri in self.mapping:
                 filename = self.mapping[uri]
+                graph = rdflib.Graph()
                 graph.parse(
                     filename, format=rdflib.util.guess_format(filename) or "xml"
                 )
             else:
                 raise Exception(f"No definition for {uri}")
-                # import sys;sys.exit(1)
-        # if the filename does not exist locally, then serialize the graph into the cache
-        # and upate the mapping
+        # if the filename does not exist locally,
+        # then serialize the graph into the cache
+        # and update the mapping
+        from hashlib import md5
+        filename = str(filename)
+        filename = md5(filename.encode()).hexdigest()
+        filename = str(filename) + ".ttl" 
+        filename = self.cachedir / filename
+
         if not os.path.exists(filename):
-            filename = str(filename) + ".ttl"
-            filename = self.cachedir / Path(filename.replace("/", "_"))
             graph.serialize(str(filename), format="ttl")
             self.mapping[str(uri)] = str(filename)
             self._refresh_cache_contents()
@@ -140,7 +155,7 @@ class OntoEnv:
             graph.parse(filename, format=rdflib.util.guess_format(filename))
         except Exception as e:
             logging.error(f"Could not parse {filename}: {e}")
-            return
+            raise
         # find ontology definitions and update mapping
         q = """SELECT ?ont ?prop ?value WHERE {
             ?ont a <http://www.w3.org/2002/07/owl#Ontology> .
@@ -164,7 +179,7 @@ class OntoEnv:
                 self._resolve_imports_from_uri(str(importURI))
         except Exception as e:
             logging.error(f"Could not resolve {uri} ({e})")
-            return
+            raise
 
     def print_dependency_graph(self, root_uri=None):
         print(
@@ -225,6 +240,9 @@ class OntoEnv:
             )
 
 
+
+
+
 def find_root_file(start=None) -> Optional[Path]:
     """
     Starting at the current directory, traverse upwards until it finds a .ontoenv directory
@@ -259,6 +277,8 @@ def find_ontology_files(start):
         matches_extension = (
             filename.suffix in FILE_EXTENSIONS or full_suffix in FILE_EXTENSIONS
         )
+        if '.ontoenv' in filename.parts:
+            continue
         if matches_extension and not filename.is_dir():
             yield filename
         if not filename.is_dir():
