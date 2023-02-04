@@ -126,8 +126,7 @@ class OntoEnv:
                     filename, format=rdflib.util.guess_format(filename) or "xml"
                 )
             else:
-                logging.fatal(f"No definition for {uri}")
-                import sys;sys.exit(1)
+                raise Exception(f"No definition for {uri}")
         # if the filename does not exist locally, then serialize the graph into the cache
         # and upate the mapping
         if not os.path.exists(filename):
