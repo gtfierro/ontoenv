@@ -9,12 +9,13 @@ import logging
 import rdflib
 import networkx as nx
 from networkx.readwrite.graphml import write_graphml, read_graphml
-from typing import Optional, Set
+from typing import Optional, Set, Generator, Union, Tuple
 
 FILE_EXTENSIONS = [".ttl", ".rdf", ".owl", ".n3", ".ntriples"]
 
 # TODO: track dependencies in a graph and render it
 
+OntologyLocation = Union[Path, str]
 
 class OntoEnv:
     _dependencies: nx.DiGraph
@@ -81,6 +82,10 @@ class OntoEnv:
             self.refresh()
 
     def refresh(self):
+        """
+        Ensure the ontoenv environment is up to date with the current set of imports.
+        Does not currently re-fetch remote ontologies.
+        """
         logging.info(f"Searching for RDF files in {self.oedir.parent}")
         for filename in find_ontology_files(self.oedir.parent):
             self._get_ontology_definition(filename)
@@ -112,7 +117,14 @@ class OntoEnv:
             json.dump(self.mapping, f)
         write_graphml(self._dependencies, self.oedir / "dependencies.gml")
 
-    def _resolve_uri(self, uri: str):
+    def resolve_uri(self, uri: OntologyLocation) -> Tuple[rdflib.Graph, OntologyLocation]:
+        """
+        Returns an rdflib.Graph which the provided uri resolves to
+
+        :param uri: URI of the graph to return
+        :return: Tuple of the RDF Graph and the physical filename where it was found
+        :raises Exception: [TODO:description]
+        """
         uri = str(uri)
         graph = rdflib.Graph()
         try:
@@ -137,14 +149,13 @@ class OntoEnv:
             self._refresh_cache_contents()
         return graph, filename
 
-    def _get_ontology_definition(self, filename: str):
+    def _get_ontology_definition(self, filename: OntologyLocation):
         if str(filename) in self.mapping.values():
             return
         graph = rdflib.Graph()
-        filename = str(filename)
         logging.info(f"Parsing {filename}")
         try:
-            graph.parse(filename, format=rdflib.util.guess_format(filename))
+            graph.parse(filename, format=rdflib.util.guess_format(str(filename)))
         except Exception as e:
             if self._strict:
                 logging.fatal(f"Could not parse {filename}: {e}")
@@ -162,13 +173,13 @@ class OntoEnv:
             self.mapping[str(row[0])] = str(filename)
         self._save()
 
-    def _resolve_imports_from_uri(self, uri: str):
+    def _resolve_imports_from_uri(self, uri: OntologyLocation):
         logging.info(f"Resolving imports from {uri}")
         if str(uri) in self._seen:
             return
         self._seen.add(str(uri))
         try:
-            graph, filename = self._resolve_uri(uri)
+            graph, filename = self.resolve_uri(uri)
             self._get_ontology_definition(filename)
             for importURI in graph.objects(predicate=rdflib.OWL.imports):
                 self._dependencies.add_edge(str(uri), str(importURI))
@@ -262,7 +273,7 @@ def find_root_file(start=None) -> Optional[Path]:
     return find_root_file(start.parent)
 
 
-def find_ontology_files(start):
+def find_ontology_files(start) -> Generator[OntologyLocation, None, None]:
     """
     Starting at the given directory, explore all subtrees and gather all ontology
     files, as identified by their file extension (see FILE_EXTENSIONS).
