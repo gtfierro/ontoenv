@@ -17,6 +17,7 @@ FILE_EXTENSIONS = [".ttl", ".rdf", ".owl", ".n3", ".ntriples"]
 
 OntologyLocation = Union[Path, str]
 
+
 class OntoEnv:
     _dependencies: nx.DiGraph
 
@@ -117,7 +118,9 @@ class OntoEnv:
             json.dump(self.mapping, f)
         write_graphml(self._dependencies, self.oedir / "dependencies.gml")
 
-    def resolve_uri(self, uri: OntologyLocation) -> Tuple[rdflib.Graph, OntologyLocation]:
+    def resolve_uri(
+        self, uri: OntologyLocation
+    ) -> Tuple[rdflib.Graph, OntologyLocation]:
         """
         Returns an rdflib.Graph which the provided uri resolves to
 
@@ -159,7 +162,9 @@ class OntoEnv:
         except Exception as e:
             if self._strict:
                 logging.fatal(f"Could not parse {filename}: {e}")
-                import sys;sys.exit(1)
+                import sys
+
+                sys.exit(1)
             else:
                 logging.error(f"Could not parse {filename}: {e}")
                 return
@@ -187,7 +192,9 @@ class OntoEnv:
         except Exception as e:
             if self._strict:
                 logging.fatal(f"Could not resolve {uri} ({e})")
-                import sys;sys.exit(1)
+                import sys
+
+                sys.exit(1)
             else:
                 logging.error(f"Could not resolve {uri} ({e})")
                 return
