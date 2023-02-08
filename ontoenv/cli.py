@@ -58,5 +58,18 @@ def deps(root_uri):
     oe.print_dependency_graph(root_uri)
 
 
+@i.command(help="Import dependencies in graph")
+@click.argument("in_graph",)# help="Graph with owl imports")
+@click.option("-o", default="imported.ttl",)# help="Graph with imported ontologies")
+@click.option("-s",  is_flag=True, help="Strict mode (error on missing ontologies)",)
+def import_deps(in_graph, o, s):
+    oe = OntoEnv(initialize=False, strict=s)
+    import rdflib
+    g = rdflib.Graph()
+    g.parse(in_graph)
+    oe.import_dependencies(g)
+    g.serialize(o, format='ttl')
+
+
 if __name__ == '__main__':
     i()
