@@ -1,8 +1,8 @@
+import sys
 import click
 import logging
 from ontoenv import OntoEnv
 import networkx as nx
-import matplotlib.pyplot as plt
 
 
 @click.group(help="Manage ontology definition mappings")
@@ -45,6 +45,11 @@ def dump(v, s):
 @i.command(help="Output dependency graph")
 @click.argument("output_filename", default="dependencies.pdf")
 def output(output_filename):
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        logging.error("Could not import matplotlib; please install and try again")
+        sys.exit(1)
     oe = OntoEnv(initialize=False)
     pos = nx.spring_layout(oe._dependencies, 2)
     nx.draw_networkx(oe._dependencies, pos=pos, with_labels=True)
@@ -58,5 +63,5 @@ def deps(root_uri):
     oe.print_dependency_graph(root_uri)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     i()
