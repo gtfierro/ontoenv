@@ -1,5 +1,6 @@
 """
 """
+import sys
 import json
 from pathlib import Path
 import os
@@ -162,8 +163,6 @@ class OntoEnv:
         except Exception as e:
             if self._strict:
                 logging.fatal(f"Could not parse {filename}: {e}")
-                import sys
-
                 sys.exit(1)
             else:
                 logging.error(f"Could not parse {filename}: {e}")
@@ -192,8 +191,6 @@ class OntoEnv:
         except Exception as e:
             if self._strict:
                 logging.fatal(f"Could not resolve {uri} ({e})")
-                import sys
-
                 sys.exit(1)
             else:
                 logging.error(f"Could not resolve {uri} ({e})")
@@ -243,6 +240,8 @@ class OntoEnv:
             new_imports = True
             filename = self.mapping.get(uri)
             if filename is None:
+                if self._strict:
+                    raise Exception(f"Could not load {uri} (no definition found)")
                 logging.error(f"Could not load {uri} (no definition found)")
                 cache.add(uri)
                 continue
