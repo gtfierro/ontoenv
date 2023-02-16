@@ -123,26 +123,31 @@ class OntoEnv:
         self, uri: OntologyLocation
     ) -> Tuple[rdflib.Graph, OntologyLocation]:
         """
-        Returns an rdflib.Graph which the provided uri resolves to
+        Returns an rdflib.Graph which the provided uri resolves to. Prioritizes
+        local files (including those in the cache), then remote URIs (which are
+        then cached)
 
         :param uri: URI of the graph to return
         :return: Tuple of the RDF Graph and the physical filename where it was found
         :raises Exception: [TODO:description]
         """
         uri = str(uri)
+
         graph = rdflib.Graph()
+        # attempt to resolve locally
+        if uri in self.mapping:
+            filename = self.mapping[uri]
+            graph.parse(filename, format=rdflib.util.guess_format(filename) or "xml")
+            return graph, filename
+        logging.info(
+            f"URI {uri} was not defined locally or did not have a cached definition. Trying to fetch remote"
+        )
         try:
             graph.parse(uri, format=rdflib.util.guess_format(uri) or "xml")
             filename = uri
         except Exception as e:
-            logging.warning(f"Could not load {uri} ({e}); trying to resolve locally")
-            if uri in self.mapping:
-                filename = self.mapping[uri]
-                graph.parse(
-                    filename, format=rdflib.util.guess_format(filename) or "xml"
-                )
-            else:
-                raise Exception(f"No definition for {uri}")
+            raise Exception(f"No definition for {uri}: {e}")
+
         # if the filename does not exist locally, then serialize the graph into the cache
         # and upate the mapping
         if not os.path.exists(filename):
