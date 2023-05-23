@@ -95,7 +95,8 @@ class OntoEnv:
             self._resolve_imports_from_uri(filename)
 
         # remove old imports/files that are no longer in the mapping
-        for uri, filename in self.mapping.items():
+        mapping_tmp = list(self.mapping.items())
+        for uri, filename in mapping_tmp:
             if not os.path.exists(filename):
                 del self.mapping[uri]
                 self._dependencies.remove_node(uri)
