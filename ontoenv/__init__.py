@@ -1,6 +1,7 @@
 """
 """
 import sys
+from typing import Callable
 import json
 from pathlib import Path
 import os
@@ -215,7 +216,7 @@ class OntoEnv:
         seen = set()
         for root in root_uris:
             print(f"{root}")
-            for (_, dep) in self._dependencies.edges([root]):
+            for _, dep in self._dependencies.edges([root]):
                 self._print_dep_graph(dep, 1, seen)
 
     def _print_dep_graph(self, uri, indent, seen, last=False):
@@ -226,12 +227,28 @@ class OntoEnv:
         print(f"{'|  '*indent}{char} {uri}")
         seen.add(uri)
         num_deps = len(self._dependencies.edges([uri]))
-        for (i, (_, dep)) in enumerate(self._dependencies.edges([uri])):
+        for i, (_, dep) in enumerate(self._dependencies.edges([uri])):
             self._print_dep_graph(dep, indent + 1, seen, last=i == num_deps - 1)
 
     def import_dependencies(
-        self, graph, cache=None, recursive=True, recursive_limit=-1
+        self,
+        graph: rdflib.Graph,
+        cache=None,
+        recursive=True,
+        recursive_limit=-1,
+        keep_matching: Optional[Callable[[rdflib.term.Node], bool]] = None,
     ):
+        """
+        Imports graph dependencies required by the provided graph into that graph object
+
+        :param graph: The graph from which to read the import statements, and the graph in which the graphs are deposited
+        :type graph: rdflib.Graph
+        :param recursive: if True, include all graphs in the transitive closure of `owl:imports`, defaults to True
+        :type recursive: bool, optional
+        :param recursive_limit: A limit to the size of the transitive closure resolved when `recursive` is True; for example, if recursive_limit = 1, then only the immediate dependencies of the graph are included
+        :type recursive_limit: bool, optional
+        :param keep_matching: an optional function which returns True for ontologies which should be imported
+        """
         if recursive_limit > 0:
             recursive = False
         elif recursive_limit == 0:
@@ -242,6 +259,11 @@ class OntoEnv:
         for importURI in graph.objects(predicate=rdflib.OWL.imports):
             uri = str(importURI)
             if uri in cache:
+                continue
+            # skip if it doesn't match a provided filter
+            if keep_matching and not keep_matching(uri):
+                logging.info(f"Skipping {uri} due to filter")
+                cache.add(uri)
                 continue
             new_imports = True
             filename = self.mapping.get(uri)
@@ -260,6 +282,7 @@ class OntoEnv:
                 cache=cache,
                 recursive=recursive,
                 recursive_limit=recursive_limit - 1,
+                keep_matching=keep_matching,
             )
 
 
