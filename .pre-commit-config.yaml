@@ -4,7 +4,9 @@ repos:
   rev: v0.1.4
   hooks:
     - id: ruff
+      entry: poetry run ruff
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v0.812  # Use the ref you want to point at
+  rev: v0.931
   hooks:
     - id: mypy
+      args: ["--install-types", "--non-interactive", "--ignore-missing-imports"]
