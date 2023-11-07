@@ -14,6 +14,14 @@ repos:
   hooks:
     - id: flake8
       args: ['--config=.flake8']
+- repo: https://github.com/ruffrey/mypy-pre-commit
+  rev: v0.910-1
+  hooks:
+    - id: mypy
+- repo: https://github.com/ruffrey/ruff-pre-commit
+  rev: v0.0.1
+  hooks:
+    - id: ruff
 - repo: local
   hooks:
     - id: sort-defs
