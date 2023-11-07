@@ -24,14 +24,6 @@ class OntoEnv:
 
     def __init__(self, oe_dir: Optional[Path] = None, initialize: bool = False, strict: bool = False):
         """
-        Initializes the OntoEnv object. If initialize is True, it creates the necessary directories and files.
-        If strict is True, it raises an error when an ontology is not found.
-
-        :param oe_dir: directory of the ontoenv mapping file, defaults to None
-        :param initialize: if true, then initialize the ontoenv mapping, defaults to False
-        :param strict: if true, error when an ontology is not found, defaults to False
-        """
-        """
         *Idempotently* initializes the oe_dir. Creates directories if they don't exist
         and creates a default mapping file. Reads existing mapping file if one exists.
         Returns the resulting dictionary.
@@ -93,10 +85,6 @@ class OntoEnv:
 
     def refresh(self) -> None:
         """
-        Updates the ontoenv environment to match the current set of imports.
-        Does not currently re-fetch remote ontologies.
-        """
-        """
         Ensure the ontoenv environment is up to date with the current set of imports.
         Does not currently re-fetch remote ontologies.
         """
@@ -133,15 +121,6 @@ class OntoEnv:
         write_graphml(self._dependencies, self.oedir / "dependencies.gml")
 
     def resolve_uri(self, uri: OntologyLocation) -> Tuple[rdflib.Graph, OntologyLocation]:
-        """
-        Returns an rdflib.Graph which the provided uri resolves to. Prioritizes
-        local files (including those in the cache), then remote URIs (which are
-        then cached)
-
-        :param uri: URI of the graph to return
-        :return: Tuple of the RDF Graph and the physical filename where it was found
-        :raises Exception: [TODO:description]
-        """
         """
         Returns an rdflib.Graph which the provided uri resolves to. Prioritizes
         local files (including those in the cache), then remote URIs (which are
@@ -331,9 +310,6 @@ def find_root_file(start: Optional[str] = None) -> Optional[Path]:
     :param start: The directory to start from. If None, it starts from the current directory.
     :return: The path to the .ontoenv directory, or None if not found.
     """
-    """
-    Starting at the current directory, traverse upwards until it finds a .ontoenv directory
-    """
     if start is None:
         start = Path(os.getcwd())
     start = Path(start)
@@ -360,11 +336,6 @@ def find_ontology_files(start: str) -> Generator[OntologyLocation, None, None]:
 
     :param start: The directory to start from.
     :return: A generator yielding all ontology files.
-    """
-    """
-    Starting at the given directory, explore all subtrees and gather all ontology
-    files, as identified by their file extension (see FILE_EXTENSIONS).
-    Returns a generator which yields all files matching one of the FILE_EXTENSIONS
     """
     # use parent of the .ontoenv directory
     for filename in start.iterdir():
