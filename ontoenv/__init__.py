@@ -229,7 +229,27 @@ class OntoEnv:
         for (i, (_, dep)) in enumerate(self._dependencies.edges([uri])):
             self._print_dep_graph(dep, indent + 1, seen, last=i == num_deps - 1)
 
-    def import_dependencies(
+
+    def import_dependencies(self, graph: rdflib.Graph, recursive=True, recursive_limit=-1):
+        # get the base URI of this graph (subject of owl:Ontology)
+        uri = graph.value(predicate=rdflib.RDF.type, object=rdflib.OWL.Ontology)
+        if uri is None:
+            raise Exception("No owl:Ontology found in graph")
+        # import all dependencies
+        self._import_dependencies(graph, recursive=recursive, recursive_limit=recursive_limit)
+        # change all triples of form <x> <sh:prefixes> <uri1> to <x> <sh:prefixes> <uri>, where
+        # <uri> is our base URI above
+        for s, p, o in graph.triples((None, rdflib.SH.prefixes, None)):
+            graph.remove((s, p, o))
+            graph.add((s, p, uri))
+        # change all triples of form <x> <sh:declare> <uri1> to <uri> <sh:declare> <uri1>, where
+        # <uri> is our base URI above
+        for s, p, o in graph.triples((None, rdflib.SH.declare, None)):
+            graph.remove((s, p, o))
+            graph.add((uri, p, o))
+
+
+    def _import_dependencies(
         self, graph, cache=None, recursive=True, recursive_limit=-1
     ):
         if recursive_limit > 0:
@@ -255,7 +275,7 @@ class OntoEnv:
             graph.parse(filename, format=rdflib.util.guess_format(filename))
             cache.add(uri)
         if (recursive or recursive_limit > 0) and new_imports:
-            self.import_dependencies(
+            self._import_dependencies(
                 graph,
                 cache=cache,
                 recursive=recursive,
