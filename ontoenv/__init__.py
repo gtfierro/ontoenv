@@ -22,7 +22,7 @@ OntologyLocation = Union[Path, str]
 class OntoEnv:
     _dependencies: nx.DiGraph
 
-    def __init__(self, oe_dir: Optional[Path] = None, initialize=False, strict=False):
+    def __init__(self, oe_dir: Optional[Path] = None, initialize: bool = False, strict: bool = False):
         """
         Initializes the OntoEnv object. If initialize is True, it creates the necessary directories and files.
         If strict is True, it raises an error when an ontology is not found.
@@ -91,7 +91,7 @@ class OntoEnv:
         if created:
             self.refresh()
 
-    def refresh(self):
+    def refresh(self) -> None:
         """
         Updates the ontoenv environment to match the current set of imports.
         Does not currently re-fetch remote ontologies.
@@ -114,20 +114,20 @@ class OntoEnv:
                 self._dependencies.remove_node(uri)
                 logging.info(f"Removed {uri} from mapping")
 
-    def _refresh_cache_contents(self):
+    def _refresh_cache_contents(self) -> None:
         self.cache_contents = set()
         for ext in FILE_EXTENSIONS:
             pat = str(self.cachedir / f"*{ext}")
             for fn in glob.glob(pat):
                 self.cache_contents.add(fn)
 
-    def _cache_file(self, filename: Path):
+    def _cache_file(self, filename: Path) -> None:
         if filename.parent == self.cachedir or filename in self.cache_contents:
             return
         shutil.copy(filename, self.cachedir)
         self._refresh_cache_contents()
 
-    def _save(self):
+    def _save(self) -> None:
         with open(self.oedir / "mapping.json", "w") as f:
             json.dump(self.mapping, f)
         write_graphml(self._dependencies, self.oedir / "dependencies.gml")
@@ -178,7 +178,7 @@ class OntoEnv:
             self._refresh_cache_contents()
         return graph, filename
 
-    def _get_ontology_definition(self, filename: OntologyLocation):
+    def _get_ontology_definition(self, filename: OntologyLocation) -> None:
         """
         If the filename is not already in the mapping, it parses the file and updates the mapping.
 
@@ -207,7 +207,7 @@ class OntoEnv:
             self.mapping[str(row[0])] = str(filename)
         self._save()
 
-    def _resolve_imports_from_uri(self, uri: OntologyLocation):
+    def _resolve_imports_from_uri(self, uri: OntologyLocation) -> None:
         """
         Resolves the imports from the given URI.
 
@@ -231,7 +231,7 @@ class OntoEnv:
                 logging.error(f"Could not resolve {uri} ({e})")
                 return
 
-    def print_dependency_graph(self, root_uri=None):
+    def print_dependency_graph(self, root_uri: Optional[str] = None) -> None:
         """
         Prints the dependency graph.
 
@@ -252,7 +252,7 @@ class OntoEnv:
             for (_, dep) in self._dependencies.edges([root]):
                 self._print_dep_graph(dep, 1, seen)
 
-    def _print_dep_graph(self, uri, indent, seen, last=False):
+    def _print_dep_graph(self, uri: str, indent: int, seen: set, last: bool = False) -> None:
         char = "┕" if last else "┝"
         if uri in seen:
             print(f"{'|  '*indent}{char} \033[1m{uri}\033[0m")
@@ -264,7 +264,7 @@ class OntoEnv:
             self._print_dep_graph(dep, indent + 1, seen, last=i == num_deps - 1)
 
 
-    def import_dependencies(self, graph: rdflib.Graph, recursive=True, recursive_limit=-1):
+    def import_dependencies(self, graph: rdflib.Graph, recursive: bool = True, recursive_limit: int = -1) -> None:
         """
         Imports all dependencies of the given graph.
 
@@ -291,8 +291,8 @@ class OntoEnv:
 
 
     def _import_dependencies(
-        self, graph, cache=None, recursive=True, recursive_limit=-1
-    ):
+        self, graph: rdflib.Graph, cache: Optional[set] = None, recursive: bool = True, recursive_limit: int = -1
+    ) -> None:
         if recursive_limit > 0:
             recursive = False
         elif recursive_limit == 0:
@@ -324,7 +324,7 @@ class OntoEnv:
             )
 
 
-def find_root_file(start=None) -> Optional[Path]:
+def find_root_file(start: Optional[str] = None) -> Optional[Path]:
     """
     Starting at the current directory, traverse upwards until it finds a .ontoenv directory
 
@@ -352,7 +352,7 @@ def find_root_file(start=None) -> Optional[Path]:
     return find_root_file(start.parent)
 
 
-def find_ontology_files(start) -> Generator[OntologyLocation, None, None]:
+def find_ontology_files(start: str) -> Generator[OntologyLocation, None, None]:
     """
     Starting at the given directory, explore all subtrees and gather all ontology
     files, as identified by their file extension (see FILE_EXTENSIONS).
