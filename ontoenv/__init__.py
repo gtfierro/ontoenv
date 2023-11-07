@@ -303,7 +303,7 @@ class OntoEnv:
             )
 
 
-def find_root_file(start: Optional[str] = None) -> Optional[Path]:
+def find_root_file(start: Optional[OntologyLocation] = None) -> Optional[Path]:
     """
     Starting at the current directory, traverse upwards until it finds a .ontoenv directory
 
@@ -328,7 +328,7 @@ def find_root_file(start: Optional[str] = None) -> Optional[Path]:
     return find_root_file(start.parent)
 
 
-def find_ontology_files(start: str) -> Generator[OntologyLocation, None, None]:
+def find_ontology_files(start: Path) -> Generator[OntologyLocation, None, None]:
     """
     Starting at the given directory, explore all subtrees and gather all ontology
     files, as identified by their file extension (see FILE_EXTENSIONS).
