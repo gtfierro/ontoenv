@@ -10,7 +10,7 @@ import logging
 import rdflib
 import networkx as nx
 from networkx.readwrite.graphml import write_graphml, read_graphml
-from typing import Optional, Set, Generator, Union, Tuple
+from typing import Optional, Set, Generator, Union, Tuple, Dict
 
 FILE_EXTENSIONS = [".ttl", ".rdf", ".owl", ".n3", ".ntriples"]
 
@@ -233,13 +233,13 @@ class OntoEnv:
             root_uris = [self.mapping[root_uri]]
         else:
             root_uris = [root_uri]
-        seen = set()
+        seen: Set[str] = set()
         for root in root_uris:
             print(f"{root}")
             for (_, dep) in self._dependencies.edges([root]):
                 self._print_dep_graph(dep, 1, seen)
 
-    def _print_dep_graph(self, uri: str, indent: int, seen: set, last: bool = False) -> None:
+    def _print_dep_graph(self, uri: str, indent: int, seen: Set[str], last: bool = False) -> None:
         char = "┕" if last else "┝"
         if uri in seen:
             print(f"{'|  '*indent}{char} \033[1m{uri}\033[0m")
