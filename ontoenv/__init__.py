@@ -146,6 +146,8 @@ class OntoEnv:
             # store the parsed graph in the cache
             self._graph_cache[uri] = graph
             return graph, filename
+        # create graph object to hold the remote graph
+        graph = rdflib.Graph()
         logging.info(
             f"URI {uri} was not defined locally or did not have a cached definition. Trying to fetch remote"
         )

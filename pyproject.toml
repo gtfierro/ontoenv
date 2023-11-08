@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ontoenv"
-version = "0.3.8a1"
+version = "0.3.8a2"
 description = "Manages owl:imports statements for multi-file development"
 authors = ["Gabe Fierro <gtfierro@mines.edu>"]
 license = "BSD 3-Clause"
