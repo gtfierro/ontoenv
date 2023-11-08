@@ -175,13 +175,14 @@ class OntoEnv:
 
         :param filename: The filename of the ontology
         """
-        if str(filename) in self.mapping.values():
+        if str(filename) in self.mapping.values() or str(filename) in self._failed_parsing:
             return
         graph = rdflib.Graph()
         logging.info(f"Parsing {filename}")
         try:
             graph.parse(filename, format=rdflib.util.guess_format(str(filename)))
         except Exception as e:
+            self._failed_parsing.add(str(filename))
             if self._strict:
                 logging.fatal(f"Could not parse {filename}: {e}")
                 sys.exit(1)
