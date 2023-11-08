@@ -22,9 +22,11 @@ OntologyLocation = Union[Path, str]
 class OntoEnv:
     _dependencies: nx.DiGraph
     _graph_cache: Dict[str, rdflib.Graph]
+    _failed_parsing: Set[str]
 
     def __init__(self, oe_dir: Optional[Path] = None, initialize: bool = False, strict: bool = False):
         self._graph_cache = {}
+        self._failed_parsing = set()
         """
         *Idempotently* initializes the oe_dir. Creates directories if they don't exist
         and creates a default mapping file. Reads existing mapping file if one exists.
