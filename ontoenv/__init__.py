@@ -21,8 +21,10 @@ OntologyLocation = Union[Path, str]
 
 class OntoEnv:
     _dependencies: nx.DiGraph
+    _graph_cache: Dict[str, rdflib.Graph]
 
     def __init__(self, oe_dir: Optional[Path] = None, initialize: bool = False, strict: bool = False):
+        self._graph_cache = {}
         """
         *Idempotently* initializes the oe_dir. Creates directories if they don't exist
         and creates a default mapping file. Reads existing mapping file if one exists.
@@ -132,11 +134,17 @@ class OntoEnv:
         """
         uri = str(uri)
 
-        graph = rdflib.Graph()
         # attempt to resolve locally
         if uri in self.mapping:
             filename = self.mapping[uri]
+            # check if the graph is in the cache
+            if uri in self._graph_cache:
+                return self._graph_cache[uri], filename
+            # if not in the cache, parse the graph
+            graph = rdflib.Graph()
             graph.parse(filename, format=rdflib.util.guess_format(filename) or "xml")
+            # store the parsed graph in the cache
+            self._graph_cache[uri] = graph
             return graph, filename
         logging.info(
             f"URI {uri} was not defined locally or did not have a cached definition. Trying to fetch remote"
