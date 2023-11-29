@@ -151,7 +151,7 @@ class OntoEnv:
         # and upate the mapping
         if not os.path.exists(filename):
             filename = str(filename) + ".ttl"
-            filename = self.cachedir / Path(filename.replace("/", "_"))
+            filename = self.cachedir / Path(filename.replace("/", "_").replace(':', '_') )
             graph.serialize(str(filename), format="ttl")
             self.mapping[str(uri)] = str(filename)
             self._refresh_cache_contents()
