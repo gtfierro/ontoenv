@@ -24,7 +24,12 @@ class OntoEnv:
     _graph_cache: Dict[str, rdflib.Graph]
     _failed_parsing: Set[str]
 
-    def __init__(self, oe_dir: Optional[Path] = None, initialize: bool = False, strict: bool = False):
+    def __init__(
+        self,
+        oe_dir: Optional[Path] = None,
+        initialize: bool = False,
+        strict: bool = False,
+    ):
         self._graph_cache = {}
         self._failed_parsing = set()
         """
@@ -124,7 +129,9 @@ class OntoEnv:
             json.dump(self.mapping, f)
         write_graphml(self._dependencies, self.oedir / "dependencies.gml")
 
-    def resolve_uri(self, uri: OntologyLocation) -> Tuple[rdflib.Graph, OntologyLocation]:
+    def resolve_uri(
+        self, uri: OntologyLocation
+    ) -> Tuple[rdflib.Graph, OntologyLocation]:
         """
         Returns an rdflib.Graph which the provided uri resolves to. Prioritizes
         local files (including those in the cache), then remote URIs (which are
@@ -163,7 +170,9 @@ class OntoEnv:
         # and upate the mapping
         if not os.path.exists(filename):
             filename = str(filename) + ".ttl"
-            filename = self.cachedir / Path(filename.replace("/", "_").replace(':', '_') )
+            filename = self.cachedir / Path(
+                filename.replace("/", "_").replace(":", "_")
+            )
             graph.serialize(str(filename), format="ttl")
             self.mapping[str(uri)] = str(filename)
             self._refresh_cache_contents()
@@ -175,7 +184,10 @@ class OntoEnv:
 
         :param filename: The filename of the ontology
         """
-        if str(filename) in self.mapping.values() or str(filename) in self._failed_parsing:
+        if (
+            str(filename) in self.mapping.values()
+            or str(filename) in self._failed_parsing
+        ):
             return
         graph = rdflib.Graph()
         logging.info(f"Parsing {filename}")
@@ -241,10 +253,12 @@ class OntoEnv:
         seen: Set[str] = set()
         for root in root_uris:
             print(f"{root}")
-            for (_, dep) in self._dependencies.edges([root]):
+            for _, dep in self._dependencies.edges([root]):
                 self._print_dep_graph(dep, 1, seen)
 
-    def _print_dep_graph(self, uri: str, indent: int, seen: Set[str], last: bool = False) -> None:
+    def _print_dep_graph(
+        self, uri: str, indent: int, seen: Set[str], last: bool = False
+    ) -> None:
         char = "┕" if last else "┝"
         if uri in seen:
             print(f"{'|  '*indent}{char} \033[1m{uri}\033[0m")
@@ -252,11 +266,12 @@ class OntoEnv:
         print(f"{'|  '*indent}{char} {uri}")
         seen.add(uri)
         num_deps = len(self._dependencies.edges([uri]))
-        for (i, (_, dep)) in enumerate(self._dependencies.edges([uri])):
+        for i, (_, dep) in enumerate(self._dependencies.edges([uri])):
             self._print_dep_graph(dep, indent + 1, seen, last=i == num_deps - 1)
 
-
-    def import_dependencies(self, graph: rdflib.Graph, recursive: bool = True, recursive_limit: int = -1) -> None:
+    def import_dependencies(
+        self, graph: rdflib.Graph, recursive: bool = True, recursive_limit: int = -1
+    ) -> None:
         """
         Imports all dependencies of the given graph.
 
@@ -269,7 +284,9 @@ class OntoEnv:
         if uri is None:
             raise Exception("No owl:Ontology found in graph")
         # import all dependencies
-        self._import_dependencies(graph, recursive=recursive, recursive_limit=recursive_limit)
+        self._import_dependencies(
+            graph, recursive=recursive, recursive_limit=recursive_limit
+        )
         # change all triples of form <x> <sh:prefixes> <uri1> to <x> <sh:prefixes> <uri>, where
         # <uri> is our base URI above
         for s, p, o in graph.triples((None, rdflib.SH.prefixes, None)):
@@ -281,9 +298,12 @@ class OntoEnv:
             graph.remove((s, p, o))
             graph.add((uri, p, o))
 
-
     def _import_dependencies(
-        self, graph: rdflib.Graph, cache: Optional[set] = None, recursive: bool = True, recursive_limit: int = -1
+        self,
+        graph: rdflib.Graph,
+        cache: Optional[set] = None,
+        recursive: bool = True,
+        recursive_limit: int = -1,
     ) -> None:
         if recursive_limit > 0:
             recursive = False

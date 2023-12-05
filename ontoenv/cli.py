@@ -65,7 +65,9 @@ def deps(root_uri):
 
 
 # accepts arguments for import_dependencies; the graph is given as a filename
-@i.command(help="Import all dependencies specified by the given graph and output the new graph to a file")
+@i.command(
+    help="Import all dependencies specified by the given graph and output the new graph to a file"
+)
 @click.argument("input_filename")
 @click.argument("output_filename")
 @click.argument("recursive", default=False)
