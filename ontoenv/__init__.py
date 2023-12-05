@@ -270,14 +270,16 @@ class OntoEnv:
             self._print_dep_graph(dep, indent + 1, seen, last=i == num_deps - 1)
 
     def import_dependencies(
-        self, graph: rdflib.Graph, recursive: bool = True, recursive_limit: int = -1
+        self, graph: rdflib.Graph, recursive: bool = True, recursive_limit: int = -1, remove_import_statements: bool = True
     ) -> None:
         """
-        Imports all dependencies of the given graph.
+        Imports all dependencies of the given graph. Rewrites sh:prefixes and sh:declare statements to
+        hang off of the ontology declaration of the provided graph
 
         :param graph: The RDF graph to import dependencies for
         :param recursive: Whether to recursively import dependencies
         :param recursive_limit: The maximum depth to recursively import dependencies. -1 means no limit.
+        :param remove_import_statements: Whether to remove the import statements from the graph after importing them
         """
         # get the base URI of this graph (subject of owl:Ontology)
         uri = graph.value(predicate=rdflib.RDF.type, object=rdflib.OWL.Ontology)
@@ -297,6 +299,9 @@ class OntoEnv:
         for s, p, o in graph.triples((None, rdflib.SH.declare, None)):
             graph.remove((s, p, o))
             graph.add((uri, p, o))
+        # remove all import statements
+        if remove_import_statements:
+            graph.remove((None, rdflib.OWL.imports, None))
 
     def _import_dependencies(
         self,
