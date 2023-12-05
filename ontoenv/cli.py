@@ -49,7 +49,7 @@ def output(output_filename):
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        logging.error("Could not import matplotlib; please install and try again")
+        logging.error("Could not import matplotlib; please install it by running 'pip install ontoenv[viz]' and try again")
         sys.exit(1)
     oe = OntoEnv(initialize=False)
     pos = nx.spring_layout(oe._dependencies, 2)
