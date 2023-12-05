@@ -12,9 +12,11 @@ click = "^8.0.1"
 networkx = "^3.2"
 requests = "^2.25.1"
 pydot = "^1.4.2"
-matplotlib = "^3.4.2"
 
 [tool.poetry.dev-dependencies]
+
+[tool.poetry.extras]
+viz = ["matplotlib"]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.4"
