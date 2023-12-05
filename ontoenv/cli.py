@@ -1,4 +1,5 @@
 import sys
+import rdflib
 import click
 import logging
 from ontoenv import OntoEnv
@@ -61,6 +62,20 @@ def output(output_filename):
 def deps(root_uri):
     oe = OntoEnv(initialize=False)
     oe.print_dependency_graph(root_uri)
+
+
+# accepts arguments for import_dependencies; the graph is given as a filename
+@i.command(help="Import all dependencies specified by the given graph and output the new graph to a file")
+@click.argument("input_filename")
+@click.argument("output_filename")
+@click.argument("recursive", default=False)
+@click.argument("recursive_limit", default=-1)
+def import_deps(input_filename, output_filename, recursive, recursive_limit):
+    g = rdflib.Graph()
+    g.parse(input_filename, format=rdflib.util.guess_format(input_filename))
+    oe = OntoEnv(initialize=False)
+    oe.import_dependencies(g, recursive, recursive_limit)
+    g.serialize(output_filename, format="turtle")
 
 
 if __name__ == "__main__":
